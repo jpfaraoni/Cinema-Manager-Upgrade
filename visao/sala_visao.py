@@ -1,5 +1,8 @@
 import PySimpleGUI as sg
 
+from exception.cancelopexeception import CancelOpException
+
+
 class SalaVisao:
     def __init__(self):
         pass
@@ -27,8 +30,6 @@ class SalaVisao:
         window = sg.Window("Menu Sala", layout)
         event, _ = window.read()
         window.close()
-        # if event == sg.WINDOW_CLOSED:
-        #     event = 0
         return event if event is not None else 0
 
     def pega_dados_sala(self):
@@ -40,11 +41,13 @@ class SalaVisao:
         ]
         window = sg.Window("Cadastrar Sala", layout)
 
-        event, values = window.read()
+        button, values = window.read()
         window.close()
 
-        if event == "Cancelar" or event == sg.WINDOW_CLOSED:
-            return None
+        # if event == "Cancelar" or event == sg.WINDOW_CLOSED:
+        #     raise CancelOpException()
+        if button in ("Cancelar", None):
+            raise CancelOpException()
 
         try:
             return {
@@ -62,51 +65,74 @@ class SalaVisao:
         ]
         window = sg.Window("Atualizar Sala", layout)
 
-        event, values = window.read()
+        button, values = window.read()
         window.close()
 
-        if event == "Cancelar" or event == sg.WINDOW_CLOSED:
-            return None
+        if button in ("Cancelar", None):
+            raise CancelOpException()
 
         try:
             return int(values["capacidade"])
         except ValueError:
             raise ValueError("Dados inválidos.")
 
-    def seleciona_sala(self):
-        sg.ChangeLookAndFeel('DarkGrey10')
-        layout = [
-            [sg.Text("Digite o número da sala que deseja selecionar:"), sg.InputText(key="numero")],
-            [sg.Button("Confirmar"), sg.Button("Cancelar")],
-        ]
-        window = sg.Window("Selecionar Sala", layout)
+    # def seleciona_sala(self):
+    #     sg.ChangeLookAndFeel('DarkGrey10')
+    #     layout = [
+    #         [sg.Text("Digite o número da sala que deseja selecionar:"), sg.InputText(key="numero")],
+    #         [sg.Button("Confirmar"), sg.Button("Cancelar")],
+    #     ]
+    #     window = sg.Window("Selecionar Sala", layout)
+    #
+    #     button, values = window.read()
+    #     window.close()
+    #
+    #     if button in ("Cancelar", None):
+    #         raise CancelOpException()
+    #
+    #     try:
+    #         return int(values["numero"])
+    #     except ValueError:
+    #         raise ValueError("Dados inválidos.")
 
-        event, values = window.read()
+    def exibe_lista_salas(self, salas, selecionar=False):
+        """
+        Exibe a lista de salas cadastradas com ou sem funcionalidade de seleção.
+        """
+        if not salas:
+            sg.popup("Nenhuma sala cadastrada.")
+            return None  # Retorna None se não houver salas
+
+        layout = [[sg.Text("Salas cadastradas:")]]
+        for sala in salas:
+            if selecionar:
+                layout.append([
+                    sg.Radio(
+                        f"NÚMERO: {sala['numero']}, CAPACIDADE: {sala['capacidade']}",
+                        "SALAS",
+                        key=str(sala['numero'])
+                    )
+                ])
+            else:
+                layout.append([sg.Text(f"NÚMERO: {sala['numero']}, CAPACIDADE: {sala['capacidade']}")])
+
+        if selecionar:
+            layout.append([sg.Button("Confirmar"), sg.Cancel("Cancelar")])
+        else:
+            layout.append([sg.Button("Fechar")])
+
+        window = sg.Window("Lista de Salas", layout)
+        button, values = window.read()
         window.close()
 
-        if event == "Cancelar" or event == sg.WINDOW_CLOSED:
-            return None
+        if button in (None, "Cancelar"):
+            raise CancelOpException()
 
-        try:
-            return int(values["numero"])
-        except ValueError:
-            raise ValueError("Dados inválidos.")
+        for key, selected in values.items():
+            if selected:
+                return int(key)
+
 
     def mostra_mensagem(self, msg):
         sg.ChangeLookAndFeel('DarkGrey10')
         sg.popup(msg)
-
-    def exibe_lista_salas(self, salas):
-        sg.ChangeLookAndFeel('DarkGrey10')
-        if not salas:
-            sg.popup("Nenhuma sala cadastrada.")
-            return
-
-        layout = [[sg.Text("Salas cadastradas:")]]
-        for sala in salas:
-            layout.append([sg.Text(f"NÚMERO: {sala['numero']}, CAPACIDADE: {sala['capacidade']}")])
-        layout.append([sg.Button("Fechar")])
-
-        window = sg.Window("Lista de Salas", layout)
-        window.read()
-        window.close()
